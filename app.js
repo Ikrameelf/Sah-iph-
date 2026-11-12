@@ -42,6 +42,35 @@ el.list.addEventListener("click",e=>{let b=e.target.closest("button[data-action]
 $("progress-form").addEventListener("submit",e=>{if(e.submitter?.id!=="save-progress")return;e.preventDefault();let it=state.items.find(x=>x.id===editingProgressId);if(!it)return;if(it.type==="movie"){it.completed=$("movie-seen").checked;it.active=!it.completed;}else{it.progress={season:Math.max(1,Number($("progress-season").value)||1),episode:Math.max(1,Number($("progress-episode").value)||1)};it.completed=false;it.active=true;it.lastEpisode=null;}save();render();el.progressModal.close();toast("Ta progression a été mise à jour.");});
 
 $("serializd-file").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!state.token){toast("Ajoute d'abord ton jeton TMDB dans les paramètres.");el.settings.showModal();e.target.value="";return;}try{const data=JSON.parse(await file.text());if(!Array.isArray(data.shows))throw Error("Fichier non reconnu : choisis l'export JSON Serializd avec les séries.");const diary=Array.isArray(data.diary)?data.diary:[];const latest=new Map();for(const d of diary){if(d.showId==null)continue;const prev=latest.get(String(d.showId));if(!prev||String(d.dateAdded||"")>String(prev.dateAdded||""))latest.set(String(d.showId),d);}let added=0,updated=0;for(const s of data.shows){const name=s.name||s.showName;if(!name||typeof name!=="string")continue;let found=state.items.find(x=>x.serializdId===String(s.showId)||x.name.toLocaleLowerCase("fr")===name.toLocaleLowerCase("fr"));let tmdbId=found?.tmdbId||null,poster=found?.poster||null;if(!tmdbId){const res=await tmdb("/search/tv?query="+encodeURIComponent(name)+"&language="+(state.language||"fr-FR"));const norm=v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("fr").trim();const hit=(res.results||[]).find(x=>norm(x.name)===norm(name))||(res.results||[])[0];if(!hit)continue;tmdbId=String(hit.id);poster=hit.poster_path||null;}const log=latest.get(String(s.showId));let season=1,episode=1;if(log){const se=log.season||{},ep=log.episode||{};season=Number(se.seasonNumber)||1;episode=(Number(ep.episodeNumber)||0)+1;}if(found){found.tmdbId=tmdbId;found.poster=poster||found.poster;found.progress={season,episode};found.active=true;found.completed=false;found.serializdId=String(s.showId);updated++;}else{state.items.push({id:crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random(),tmdbId,type:"tv",name,poster,active:true,completed:false,progress:{season,episode},lastEpisode:null,serializdId:String(s.showId),addedAt:Date.now()});added++;}}save();render();toast("Import Serializd terminé : "+added+" ajoutée(s), "+updated+" mise(s) à jour.");}catch(err){toast(err.message||"Impossible de lire ce fichier.");}finally{e.target.value="";}});
+function exportBackup(){
+const payload={format:"serie-au-hasard-backup",version:1,exportedAt:new Date().toISOString(),items:state.items,history:state.history,lastId:state.lastId,language:state.language||"fr-FR"};
+const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+const url=URL.createObjectURL(blob),a=document.createElement("a"),stamp=new Date().toISOString().slice(0,10);
+a.href=url;a.download="serie-au-hasard-sauvegarde-"+stamp+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+$("backup-note").textContent="Sauvegarde téléchargée. Conserve ce fichier en lieu sûr.";
+}
+async function importBackup(file){
+if(!file)return;
+try{
+const raw=JSON.parse(await file.text());
+if(!raw||raw.format!=="serie-au-hasard-backup"||!Array.isArray(raw.items)||!Array.isArray(raw.history))throw Error("Ce fichier ne semble pas être une sauvegarde Série au hasard valide.");
+if(!confirm("Importer "+raw.items.length+" titre(s) ? Les titres existants seront conservés et les doublons mis à jour."))return;
+let added=0,updated=0;
+for(const incoming of raw.items){
+if(!incoming||typeof incoming.name!=="string"||!incoming.name.trim()||!["tv","movie"].includes(incoming.type))continue;
+const match=state.items.find(x=>x.id===incoming.id||(incoming.tmdbId&&x.tmdbId===incoming.tmdbId&&x.type===incoming.type));
+const clean={...incoming,id:match?.id||incoming.id||((crypto.randomUUID&&crypto.randomUUID())||Date.now()+"-"+Math.random()),progress:incoming.type==="tv"?{season:Math.max(1,Number(incoming.progress?.season)||1),episode:Math.max(1,Number(incoming.progress?.episode)||1)}:incoming.progress,active:incoming.active!==false,addedAt:Number(incoming.addedAt)||Date.now()};
+if(match){Object.assign(match,clean);updated++;}else{state.items.push(clean);added++;}
+}
+const seen=new Set(state.history.map(h=>[h.name,h.date,h.detail].join("|")));
+for(const h of raw.history){if(h&&typeof h.name==="string"){const key=[h.name,h.date,h.detail].join("|");if(!seen.has(key)){state.history.push(h);seen.add(key);}}}
+state.history=state.history.slice(0,100);
+if(raw.lastId&&!state.items.some(x=>x.id===raw.lastId))state.lastId=null;
+save();render();$("backup-note").textContent="Import terminé : "+added+" ajout(s), "+updated+" mise(s) à jour.";toast("Sauvegarde importée avec succès !");
+}catch(err){$("backup-note").textContent=err.message||"Impossible d'importer ce fichier.";toast("Import impossible : vérifie le fichier JSON.");}
+}
+$("export-data").addEventListener("click",exportBackup);
+$("import-data").addEventListener("change",async e=>{await importBackup(e.target.files?.[0]);e.target.value="";});
 $("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();toast("Paramètres enregistrés sur cet appareil.");}});
 $("clear-history").onclick=()=>{if(state.history.length&&confirm("Effacer l'historique ?")){state.history=[];save();render();}};
