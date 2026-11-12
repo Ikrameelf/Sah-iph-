@@ -1,129 +1,31 @@
-(() => {
-  "use strict";
-  const STORAGE_KEY = "serie-au-hasard-v1";
-  const $ = (id) => document.getElementById(id);
-  const els = {
-    form: $("series-form"), input: $("series-input"), list: $("series-list"),
-    empty: $("empty-library"), count: $("total-count"), available: $("available-count"),
-    draw: $("draw-btn"), reroll: $("reroll-btn"), stage: document.querySelector(".draw-stage"),
-    result: $("result-name"), kicker: $("result-kicker"), hint: $("result-hint"),
-    history: $("history-list"), clearHistory: $("clear-history"), toast: $("toast"),
-    dialog: $("edit-dialog"), editForm: $("edit-form"), editInput: $("edit-input")
-  };
-  let state = load();
-  let editingId = null;
-  let toastTimer;
-
-  function load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved && Array.isArray(saved.series) && Array.isArray(saved.history)) return saved;
-    } catch (_) {}
-    return {series: [], history: [], lastId: null};
-  }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    catch (_) { showToast("Impossible de sauvegarder : espace de stockage indisponible."); }
-  }
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-  function showToast(message) {
-    els.toast.textContent = message; els.toast.classList.add("show");
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2300);
-  }
-  function activeSeries() { return state.series.filter(s => s.active); }
-  function render() {
-    const active = activeSeries();
-    els.count.textContent = state.series.length;
-    els.available.textContent = active.length;
-    els.empty.hidden = state.series.length > 0;
-    els.list.innerHTML = state.series.map(s => `
-      <li class="series-row" data-id="${escapeHtml(s.id)}">
-        <span class="series-title ${s.active ? "" : "inactive"}">${escapeHtml(s.name)}${s.active ? "" : '<span class="status-tag">EXCLUE</span>'}</span>
-        <button class="icon-btn" data-action="toggle" aria-label="${s.active ? "Exclure" : "Réintégrer"} ${escapeHtml(s.name)}" title="${s.active ? "Exclure du tirage" : "Réintégrer"}">${s.active ? "◉" : "○"}</button>
-        <button class="icon-btn" data-action="edit" aria-label="Modifier ${escapeHtml(s.name)}" title="Modifier">✎</button>
-        <button class="icon-btn delete" data-action="delete" aria-label="Supprimer ${escapeHtml(s.name)}" title="Supprimer">×</button>
-      </li>`).join("");
-    els.draw.disabled = active.length === 0;
-    els.draw.innerHTML = active.length ? '<span class="play-icon">▶</span> TIRER AU SORT' : "AJOUTE UNE SÉRIE POUR JOUER";
-    if (!state.history.length) els.history.innerHTML = '<p class="empty-small">Tes prochains tirages apparaîtront ici.</p>';
-    else els.history.innerHTML = state.history.slice(0, 8).map(h =>
-      `<div class="history-item"><strong>${escapeHtml(h.name)}</strong><span>${escapeHtml(h.date)}</span></div>`).join("");
-  }
-  function addSeries(name) {
-    const clean = name.trim();
-    if (!clean) return;
-    if (state.series.some(s => s.name.toLocaleLowerCase("fr") === clean.toLocaleLowerCase("fr"))) {
-      showToast("Cette série est déjà dans ta liste."); return;
-    }
-    state.series.push({id: uid(), name: clean, active: true});
-    save(); render(); els.input.value = ""; els.input.focus(); showToast("Série ajoutée à ta bibliothèque !");
-  }
-  els.form.addEventListener("submit", e => { e.preventDefault(); addSeries(els.input.value); });
-  els.list.addEventListener("click", e => {
-    const btn = e.target.closest("button[data-action]");
-    if (!btn) return;
-    const row = btn.closest(".series-row");
-    const item = state.series.find(s => s.id === row.dataset.id);
-    if (!item) return;
-    const action = btn.dataset.action;
-    if (action === "toggle") {
-      item.active = !item.active; save(); render();
-      showToast(item.active ? "Série réintégrée au tirage." : "Série exclue temporairement.");
-    } else if (action === "edit") {
-      editingId = item.id; els.editInput.value = item.name; els.dialog.showModal(); els.editInput.focus();
-    } else if (action === "delete") {
-      if (!confirm(`Supprimer définitivement « ${item.name} » de ta liste ?`)) return;
-      state.series = state.series.filter(s => s.id !== item.id);
-      if (state.lastId === item.id) state.lastId = null;
-      save(); render(); showToast("Série supprimée.");
-    }
-  });
-  els.editForm.addEventListener("submit", e => {
-    if (e.submitter && e.submitter.id === "save-edit") {
-      e.preventDefault();
-      const item = state.series.find(s => s.id === editingId);
-      const name = els.editInput.value.trim();
-      if (!name) return;
-      if (state.series.some(s => s.id !== editingId && s.name.toLocaleLowerCase("fr") === name.toLocaleLowerCase("fr"))) {
-        showToast("Une série porte déjà ce nom."); return;
-      }
-      if (item) { item.name = name; save(); render(); showToast("Nom mis à jour."); }
-      els.dialog.close();
-    }
-  });
-  function draw() {
-    const pool = activeSeries();
-    if (!pool.length) { showToast("Ajoute ou réintègre une série pour commencer."); return; }
-    let candidates = pool;
-    if (pool.length > 1 && state.lastId) candidates = pool.filter(s => s.id !== state.lastId);
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-    els.draw.disabled = true; els.reroll.classList.add("hidden");
-    els.stage.classList.add("spinning");
-    els.kicker.textContent = "LE HASARD CHOISIT...";
-    els.result.textContent = "Mystère";
-    els.hint.textContent = "Encore une petite seconde";
-    window.setTimeout(() => {
-      els.stage.classList.remove("spinning");
-      els.kicker.textContent = "CE SOIR, C'EST...";
-      els.result.textContent = chosen.name;
-      els.hint.textContent = "Installe-toi confortablement. 🍿";
-      state.lastId = chosen.id;
-      state.history.unshift({id: chosen.id, name: chosen.name, date: new Date().toLocaleString("fr-FR", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"})});
-      state.history = state.history.slice(0, 30);
-      save(); render(); els.reroll.classList.remove("hidden");
-    }, 1050);
-  }
-  els.draw.addEventListener("click", draw);
-  els.reroll.addEventListener("click", draw);
-  els.clearHistory.addEventListener("click", () => {
-    if (!state.history.length) return;
-    if (confirm("Effacer tout l'historique des tirages ?")) { state.history = []; save(); render(); showToast("Historique effacé."); }
-  });
-  render();
-
-  // Le service worker met l'application en cache pour les prochaines ouvertures hors connexion.
-  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-  }
+(()=>{"use strict";
+const KEY="serie-au-hasard-v2",API="https://api.themoviedb.org/3",IMG="https://image.tmdb.org/t/p/";
+const $=id=>document.getElementById(id);
+const el={draw:$("draw"),stage:$("stage"),label:$("result-label"),title:$("result-title"),meta:$("result-meta"),count:$("active-count"),total:$("total-count"),list:$("library-list"),empty:$("empty-library"),search:$("search-title"),searchBtn:$("search-button"),results:$("search-results"),hint:$("api-hint"),history:$("history"),card:$("result-card"),settings:$("settings"),token:$("tmdb-token"),language:$("language"),toast:$("toast")};
+let state=load(),timer;
+function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.items))return x;}catch(e){}try{let old=JSON.parse(localStorage.getItem("serie-au-hasard-v1"));if(old&&Array.isArray(old.series))return{items:old.series.map(s=>({id:s.id,tmdbId:null,type:"tv",name:s.name,active:s.active!==false,poster:null,progress:{season:1,episode:1},lastEpisode:null})),history:old.history||[],lastId:old.lastId||null,token:"",language:"fr-FR"};}catch(e){}return{items:[],history:[],lastId:null,token:"",language:"fr-FR"};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast("Stockage local indisponible sur cet appareil.");}}
+function toast(t){el.toast.textContent=t;el.toast.classList.add("show");clearTimeout(timer);timer=setTimeout(()=>el.toast.classList.remove("show"),2400);}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function img(path,size="w342"){return path?IMG+size+path:"";}
+function active(){return state.items.filter(x=>x.active);}
+function render(){el.count.textContent=active().length;el.total.textContent=state.items.length;el.empty.classList.toggle("hidden",state.items.length>0);el.list.innerHTML=state.items.map(x=>`<div class="library-item" data-id="${esc(x.id)}"><img src="${esc(img(x.poster,"w154"))}" alt="" onerror="this.style.visibility='hidden'"><div class="library-main"><strong>${esc(x.name)}</strong><small>${x.type==="movie"?"FILM":`S${x.progress?.season||1} · E${x.progress?.episode||1} À VOIR`} · ${x.active?"ACTIF":"EXCLU"}</small></div><div class="library-actions"><button class="icon-btn" data-action="toggle" title="Activer/exclure">${x.active?"◉":"○"}</button><button class="icon-btn" data-action="delete" title="Supprimer">×</button></div></div>`).join("");el.history.innerHTML=state.history.length?state.history.slice(0,8).map(h=>`<div class="history-card"><strong>${esc(h.name)}</strong><span>${esc(h.detail||"Tirage")} · ${esc(h.date)}</span></div>`).join(""):'<p class="muted">Tes prochains tirages apparaîtront ici.</p>';el.draw.disabled=!active().length;el.draw.textContent=active().length?"▶  TIRER AU SORT":"AJOUTE UN TITRE POUR JOUER";el.hint.textContent=state.token?"TMDB connecté · recherche en français":"Ajoute ton jeton TMDB dans ⚙ pour activer la recherche automatique.";}
+async function tmdb(path){if(!state.token)throw Error("Ajoute ton jeton TMDB dans les paramètres.");let r=await fetch(API+path,{headers:{Authorization:"Bearer "+state.token,accept:"application/json"}});if(!r.ok)throw Error(r.status===401?"Jeton TMDB invalide. Vérifie-le dans les paramètres.":"TMDB indisponible ("+r.status+").");return r.json();}
+function dateYear(d){return d?String(d).slice(0,4):"Année inconnue";}
+async function search(){let q=el.search.value.trim();if(!q)return;if(!state.token){toast("Ajoute d'abord ton jeton TMDB dans les paramètres.");el.settings.showModal();return;}el.searchBtn.disabled=true;el.searchBtn.textContent="RECHERCHE...";el.results.classList.remove("hidden");el.results.innerHTML='<p class="muted">Recherche en cours…</p>';try{let lang=state.language||"fr-FR";let data=await tmdb("/search/multi?query="+encodeURIComponent(q)+"&language="+lang+"&include_adult=false");let hits=(data.results||[]).filter(x=>["movie","tv"].includes(x.media_type)).slice(0,10);el.results.innerHTML=hits.length?hits.map(x=>{let name=x.title||x.name;let year=dateYear(x.release_date||x.first_air_date);return `<div class="search-result"><img src="${esc(img(x.poster_path,"w154"))}" alt="" onerror="this.style.opacity=.15"><div><strong>${esc(name)}</strong><small>${x.media_type==="movie"?"FILM":"SÉRIE"} · ${esc(year)}</small></div><button data-add="${x.id}" data-type="${x.media_type}" data-name="${esc(name)}" data-poster="${esc(x.poster_path||"")}" data-date="${esc(x.release_date||x.first_air_date||"")}">AJOUTER</button></div>`;}).join(""):'<p class="muted">Aucun résultat. Essaie un autre titre.</p>';}catch(e){el.results.innerHTML='<p class="muted">'+esc(e.message)+'</p>';}finally{el.searchBtn.disabled=false;el.searchBtn.textContent="RECHERCHER";}}
+async function addFromSearch(b){let id=String(b.dataset.add),type=b.dataset.type;if(state.items.some(x=>x.tmdbId===id&&x.type===type)){toast("Ce titre est déjà dans ta bibliothèque.");return;}let name=b.dataset.name,poster=b.dataset.poster;try{let d=await tmdb("/"+(type==="movie"?"movie":"tv")+"/"+id+"?language="+(state.language||"fr-FR"));name=d.title||d.name||name;poster=d.poster_path||poster;state.items.push({id:crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random(),tmdbId:id,type,name,poster,active:true,progress:{season:1,episode:1},lastEpisode:null,year:dateYear(d.release_date||d.first_air_date)});save();render();toast("Ajouté à ta bibliothèque !");}catch(e){toast(e.message);}}
+async function episodeFor(item){let s=item.progress?.season||1,e=item.progress?.episode||1,lang=state.language||"fr-FR";for(let guard=0;guard<15;guard++){let season;try{season=await tmdb("/tv/"+item.tmdbId+"/season/"+s+"?language="+lang);}catch(err){if(item.lastEpisode)return item.lastEpisode;throw err;}let eps=season.episodes||[];let found=eps.find(x=>x.episode_number===e);if(found)return{...found,season_number:s,seriesName:item.name};s++;e=1;}throw Error("Aucun prochain épisode disponible dans les saisons publiées.");}
+async function draw(){let pool=active();if(!pool.length)return;let candidates=pool.length>1&&state.lastId?pool.filter(x=>x.id!==state.lastId):pool;let item=candidates[Math.floor(Math.random()*candidates.length)];el.draw.disabled=true;el.card.classList.add("hidden");el.stage.classList.add("spinning");el.label.textContent="LE HASARD CHOISIT...";el.title.textContent="Mystère";el.meta.textContent="Encore une petite seconde";await new Promise(r=>setTimeout(r,850));el.stage.classList.remove("spinning");el.label.textContent="CE SOIR, C'EST...";el.title.textContent=item.name;el.meta.textContent=item.type==="movie"?"Soirée cinéma":"Prochain épisode à découvrir";state.lastId=item.id;
+try{if(item.type==="movie")await showMovie(item);else await showSeries(item);}catch(e){showFallback(item,e.message);}state.history.unshift({name:item.name,detail:item.type==="movie"?"Film":("S"+(item.progress?.season||1)+" E"+(item.progress?.episode||1)),date:new Date().toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})});state.history=state.history.slice(0,30);save();render();el.draw.disabled=false;}
+async function showMovie(item){let d=item.cachedMovie;try{d=await tmdb("/movie/"+item.tmdbId+"?language="+(state.language||"fr-FR"));item.cachedMovie=d;save();}catch(e){if(!d)throw e;}$("kind-pill").textContent="FILM";$("year-pill").textContent=dateYear(d.release_date);$("card-title").textContent=d.title||item.name;$("card-overview").textContent=d.overview||"Aucun résumé disponible en français.";$("hero-poster").src=img(d.poster_path||item.poster,"w500");$("episode-panel").classList.add("hidden");$("no-episode").classList.add("hidden");$("film-panel").classList.remove("hidden");$("film-runtime").textContent=d.runtime?d.runtime+" minutes":"";el.card.classList.remove("hidden");}
+async function showSeries(item){let d=item.cachedDetails;try{d=await tmdb("/tv/"+item.tmdbId+"?language="+(state.language||"fr-FR"));item.cachedDetails=d;item.poster=d.poster_path||item.poster;save();}catch(e){if(!d)throw e;}let ep=await episodeFor(item);item.lastEpisode=ep;save();$("kind-pill").textContent="SÉRIE";$("year-pill").textContent=dateYear(d.first_air_date);$("card-title").textContent=d.name||item.name;$("card-overview").textContent=d.overview||"Aucun résumé disponible en français.";$("hero-poster").src=img(d.poster_path||item.poster,"w500");$("film-panel").classList.add("hidden");$("no-episode").classList.add("hidden");$("episode-panel").classList.remove("hidden");$("episode-title").textContent=ep.name||"Épisode sans titre";$("episode-meta").textContent="SAISON "+ep.season_number+" · ÉPISODE "+ep.episode_number+(ep.air_date?" · "+ep.air_date:"");$("episode-overview").textContent=ep.overview||"Le résumé de cet épisode n'est pas encore disponible.";let still=ep.still_path||d.backdrop_path||d.poster_path;$("episode-still").src=img(still,"w500");$("watched").onclick=()=>markWatched(item,ep);el.card.classList.remove("hidden");}
+function showFallback(item,message){el.card.classList.remove("hidden");$("kind-pill").textContent=item.type==="movie"?"FILM":"SÉRIE";$("year-pill").textContent=item.year||"";$("card-title").textContent=item.name;$("card-overview").textContent=message+" Vérifie ta connexion ou ton jeton TMDB. Les données précédemment chargées restent disponibles hors ligne.";$("hero-poster").src=img(item.poster,"w500");$("episode-panel").classList.add("hidden");$("film-panel").classList.add("hidden");$("no-episode").classList.remove("hidden");$("no-episode").textContent=item.lastEpisode?"Dernier épisode mémorisé : "+item.lastEpisode.name:"Les détails de l'épisode seront affichés lors d'une prochaine connexion.";}
+async function markWatched(item,ep){let s=ep.season_number,e=ep.episode_number;item.progress={season:s,episode:e+1};try{let season=await tmdb("/tv/"+item.tmdbId+"/season/"+s+"?language="+(state.language||"fr-FR"));let max=Math.max(0,...(season.episodes||[]).map(x=>x.episode_number));if(e>=max)item.progress={season:s+1,episode:1};}catch(err){}save();render();toast("Progression enregistrée ! Prochain épisode : S"+item.progress.season+" E"+item.progress.episode);el.card.classList.add("hidden");}
+el.searchBtn.addEventListener("click",search);el.search.addEventListener("keydown",e=>{if(e.key==="Enter")search();});el.results.addEventListener("click",e=>{let b=e.target.closest("[data-add]");if(b)addFromSearch(b);});el.draw.addEventListener("click",draw);
+el.list.addEventListener("click",e=>{let b=e.target.closest("button[data-action]");if(!b)return;let row=b.closest(".library-item"),it=state.items.find(x=>x.id===row.dataset.id);if(!it)return;if(b.dataset.action==="toggle"){it.active=!it.active;save();render();toast(it.active?"Titre réintégré.":"Titre exclu du tirage.");}if(b.dataset.action==="delete"&&confirm("Supprimer « "+it.name+" » de ta bibliothèque ?")){state.items=state.items.filter(x=>x.id!==it.id);save();render();toast("Titre supprimé.");}});
+$("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};
+$("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();toast("Paramètres enregistrés sur cet appareil.");}});
+$("clear-history").onclick=()=>{if(state.history.length&&confirm("Effacer l'historique ?")){state.history=[];save();render();}};
+render();
+if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 })();
