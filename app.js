@@ -45,6 +45,7 @@ $("serializd-file").addEventListener("change",async e=>{const file=e.target.file
 $("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();toast("Paramètres enregistrés sur cet appareil.");}});
 $("clear-history").onclick=()=>{if(state.history.length&&confirm("Effacer l'historique ?")){state.history=[];save();render();}};
+el.sort?.addEventListener("change",render);
 render();
 if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 })();
