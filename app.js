@@ -12,20 +12,17 @@ function active(){return state.items.filter(x=>x.active&&!x.completed);}
 function render(){
 el.count.textContent=active().length;el.total.textContent=state.items.length;el.empty.classList.toggle("hidden",state.items.length>0);
 const sortMode=el.sort?.value||"newest";
-const sorted=items=>items.slice().sort((a,b)=>{
-const nameA=String(a.name||"").toLocaleLowerCase("fr"),nameB=String(b.name||"").toLocaleLowerCase("fr");
-if(sortMode==="az")return nameA.localeCompare(nameB,"fr");
-if(sortMode==="za")return nameB.localeCompare(nameA,"fr");
-if(sortMode==="year")return Number(b.year||0)-Number(a.year||0)||nameA.localeCompare(nameB,"fr");
-if(sortMode==="oldest"||sortMode==="order")return Number(a.addedAt||0)-Number(b.addedAt||0);
-return Number(b.addedAt||0)-Number(a.addedAt||0);
-});
-const card=x=>`<div class="library-item" data-id="${esc(x.id)}"><img src="${esc(img(x.poster,"w154"))}" alt="" onerror="this.style.visibility='hidden'"><div class="library-main"><strong>${esc(x.name)}</strong><small>${x.type==="movie"?(x.completed?"FILM · DÉJÀ VU":"FILM · À VOIR"):(x.completed?"SÉRIE TERMINÉE":`S${x.progress?.season||1} · E${x.progress?.episode||1} À VOIR`)}</small></div><div class="library-actions"><button class="progress-btn" data-action="progress">${x.type==="movie"?"VU / À VOIR":"MODIFIER"}</button><button class="icon-btn" data-action="toggle" title="Activer/exclure">${x.active?"◉":"○"}</button><button class="icon-btn" data-action="delete" title="Supprimer">×</button></div></div>`;
-const series=sorted(state.items.filter(x=>x.type!=="movie")),movies=sorted(state.items.filter(x=>x.type==="movie"));
-el.list.innerHTML=(series.length?`<section class="library-group"><div class="library-group-head"><h3>SÉRIES</h3><span>${series.length} titre(s)</span></div>${series.map(card).join("")}</section>`:"")+(movies.length?`<section class="library-group"><div class="library-group-head"><h3>FILMS</h3><span>${movies.length} titre(s)</span></div>${movies.map(card).join("")}</section>`:"");
+const sorted=items=>items.slice().sort((a,b)=>{const nameA=String(a.name||"").toLocaleLowerCase("fr"),nameB=String(b.name||"").toLocaleLowerCase("fr");if(sortMode==="az")return nameA.localeCompare(nameB,"fr");if(sortMode==="za")return nameB.localeCompare(nameA,"fr");if(sortMode==="year")return Number(b.year||0)-Number(a.year||0)||nameA.localeCompare(nameB,"fr");if(sortMode==="oldest"||sortMode==="order")return Number(a.addedAt||0)-Number(b.addedAt||0);return Number(b.addedAt||0)-Number(a.addedAt||0);});
+const card=x=>{
+let progressMarkup="";
+if(x.type!=="movie"&&!x.completed){const seasons=x.cachedDetails?.seasons||[];const total=seasons.reduce((n,s)=>n+Number(s.episode_count||0),0);if(total>0){const before=seasons.filter(s=>s.season_number>0&&s.season_number<(x.progress?.season||1)).reduce((n,s)=>n+Number(s.episode_count||0),0);const current=Math.max(0,Number(x.progress?.episode||1)-1);const pct=Math.max(0,Math.min(100,Math.round((before+current)/total*100)));progressMarkup='<div class="series-progress"><div class="series-progress-track"><span style="width:'+pct+'%"></span></div><small>'+pct+' % · S'+(x.progress?.season||1)+' · E'+(x.progress?.episode||1)+' à venir</small></div>';}else progressMarkup='<div class="series-progress"><small>Progression : S'+(x.progress?.season||1)+' · E'+(x.progress?.episode||1)+'</small></div>';}
+return `<div class="library-item" data-id="${esc(x.id)}"><img src="${esc(img(x.poster,"w154"))}" alt="" onerror="this.style.visibility='hidden'"><div class="library-main"><strong>${esc(x.name)}</strong><small>${x.type==="movie"?(x.completed?"FILM · DÉJÀ VU":"FILM · À VOIR"):(x.completed?"SÉRIE TERMINÉE":`S${x.progress?.season||1} · E${x.progress?.episode||1} À VOIR`)}</small>${progressMarkup}</div><div class="library-actions"><button class="progress-btn" data-action="progress">${x.type==="movie"?"VU / À VOIR":"MODIFIER"}</button><button class="icon-btn" data-action="toggle" title="Activer/exclure">${x.active?"◉":"○"}</button><button class="icon-btn" data-action="delete" title="Supprimer">×</button></div></div>`;};
+const groups=[["tv","SÉRIES"],["movie","FILMS"]];
+el.list.innerHTML=groups.map(([type,label])=>{const items=sorted(state.items.filter(x=>type==="tv"?x.type!=="movie":x.type==="movie"));if(!items.length)return "";const expanded=!!state["showAll_"+type],shown=expanded?items:items.slice(0,10);return `<section class="library-group"><div class="library-group-head"><h3>${label}</h3><span>${items.length} titre(s)</span></div><div class="library-group-items">${shown.map(card).join("")}</div>${items.length>10?`<button class="show-more" data-expand="${type}">${expanded?"Voir moins":"Voir plus ("+(items.length-10)+")"}</button>`:""}</section>`;}).join("");
 el.history.innerHTML=state.history.length?state.history.slice(0,8).map(h=>`<div class="history-card"><strong>${esc(h.name)}</strong><span>${esc(h.detail||"Tirage")} · ${esc(h.date)}</span></div>`).join(""):'<p class="muted">Tes prochains tirages apparaîtront ici.</p>';
 el.draw.disabled=!active().length;el.draw.textContent=active().length?"▶  TIRER AU SORT":"AJOUTE UN TITRE POUR JOUER";el.hint.textContent=state.token?"TMDB connecté · recherche en français":"Ajoute ton jeton TMDB dans ⚙ pour activer la recherche automatique.";
 }
+
 async function tmdb(path){if(!state.token)throw Error("Ajoute ton jeton TMDB dans les paramètres.");let r=await fetch(API+path,{headers:{Authorization:"Bearer "+state.token,accept:"application/json"}});if(!r.ok)throw Error(r.status===401?"Jeton TMDB invalide. Vérifie-le dans les paramètres.":"TMDB indisponible ("+r.status+").");return r.json();}
 function dateYear(d){return d?String(d).slice(0,4):"Année inconnue";}
 async function search(){let q=el.search.value.trim();if(!q)return;if(!state.token){toast("Ajoute d'abord ton jeton TMDB dans les paramètres.");el.settings.showModal();return;}el.searchBtn.disabled=true;el.searchBtn.textContent="RECHERCHE...";el.results.classList.remove("hidden");el.results.innerHTML='<p class="muted">Recherche en cours…</p>';try{let lang=state.language||"fr-FR";let data=await tmdb("/search/multi?query="+encodeURIComponent(q)+"&language="+lang+"&include_adult=false");let hits=(data.results||[]).filter(x=>["movie","tv"].includes(x.media_type)).slice(0,10);el.results.innerHTML=hits.length?hits.map(x=>{let name=x.title||x.name;let year=dateYear(x.release_date||x.first_air_date);return `<div class="search-result"><img src="${esc(img(x.poster_path,"w154"))}" alt="" onerror="this.style.opacity=.15"><div><strong>${esc(name)}</strong><small>${x.media_type==="movie"?"FILM":"SÉRIE"} · ${esc(year)}</small></div><button data-add="${x.id}" data-type="${x.media_type}" data-name="${esc(name)}" data-poster="${esc(x.poster_path||"")}" data-date="${esc(x.release_date||x.first_air_date||"")}">AJOUTER</button></div>`;}).join(""):'<p class="muted">Aucun résultat. Essaie un autre titre.</p>';}catch(e){el.results.innerHTML='<p class="muted">'+esc(e.message)+'</p>';}finally{el.searchBtn.disabled=false;el.searchBtn.textContent="RECHERCHER";}}
@@ -65,26 +62,23 @@ setTimeout(()=>URL.revokeObjectURL(url),60000);
 $("backup-note").textContent="Téléchargement lancé. Sur iPhone, vérifie l’app Fichiers, dossier Téléchargements.";
 }
 async function importBackup(file){
-if(!file)return;
+if(!file)return;const note=$("backup-note");
 try{
+if(file.size>20*1024*1024)throw Error("Fichier trop volumineux (maximum 20 Mo).");
 const raw=JSON.parse(await file.text());
-if(!raw||raw.format!=="serie-au-hasard-backup"||!Array.isArray(raw.items)||!Array.isArray(raw.history))throw Error("Ce fichier ne semble pas être une sauvegarde Série au hasard valide.");
-if(!confirm("Importer "+raw.items.length+" titre(s) ? Les titres existants seront conservés et les doublons mis à jour."))return;
-let added=0,updated=0;
-for(const incoming of raw.items){
-if(!incoming||typeof incoming.name!=="string"||!incoming.name.trim()||!["tv","movie"].includes(incoming.type))continue;
-const match=state.items.find(x=>x.id===incoming.id||(incoming.tmdbId&&x.tmdbId===incoming.tmdbId&&x.type===incoming.type));
-const clean={...incoming,id:match?.id||incoming.id||((crypto.randomUUID&&crypto.randomUUID())||Date.now()+"-"+Math.random()),progress:incoming.type==="tv"?{season:Math.max(1,Number(incoming.progress?.season)||1),episode:Math.max(1,Number(incoming.progress?.episode)||1)}:incoming.progress,active:incoming.active!==false,addedAt:Number(incoming.addedAt)||Date.now()};
-if(match){Object.assign(match,clean);updated++;}else{state.items.push(clean);added++;}
+const importedItems=Array.isArray(raw)?raw:(raw?.items||raw?.data?.items||raw?.series);
+const importedHistory=Array.isArray(raw?.history)?raw.history:[];
+if(!Array.isArray(importedItems))throw Error("Format non reconnu. Sélectionne une sauvegarde JSON de Série au hasard.");
+if(!confirm("Importer "+importedItems.length+" titre(s) ? Ta bibliothèque actuelle sera conservée et les doublons fusionnés."))return;
+let added=0,updated=0,skipped=0;
+for(const incoming of importedItems){if(!incoming||typeof incoming.name!=="string"||!incoming.name.trim()||!["tv","movie"].includes(incoming.type)){skipped++;continue;}const match=state.items.find(x=>x.id===incoming.id||(incoming.tmdbId&&String(x.tmdbId)===String(incoming.tmdbId)&&x.type===incoming.type));const clean={...incoming,id:match?.id||incoming.id||((crypto.randomUUID&&crypto.randomUUID())||Date.now()+"-"+Math.random()),progress:incoming.type==="tv"?{season:Math.max(1,Number(incoming.progress?.season)||1),episode:Math.max(1,Number(incoming.progress?.episode)||1)}:incoming.progress,active:incoming.active!==false,addedAt:Number(incoming.addedAt)||Date.now()};if(match){Object.assign(match,clean);updated++;}else{state.items.push(clean);added++;}}
+const seen=new Set(state.history.map(h=>[h.name,h.date,h.detail].join("|")));for(const h of importedHistory){if(h&&typeof h.name==="string"){const key=[h.name,h.date,h.detail].join("|");if(!seen.has(key)){state.history.push(h);seen.add(key);}}}state.history=state.history.slice(0,100);if(raw?.lastId&&!state.items.some(x=>x.id===raw.lastId))state.lastId=null;
+save();render();note.textContent="Import réussi : "+added+" ajout(s), "+updated+" mise(s) à jour"+(skipped?" · "+skipped+" ignoré(s)":"")+".";toast("Sauvegarde importée : "+(added+updated)+" titre(s).");
+}catch(err){note.textContent=err.message||"Impossible de lire ce fichier JSON.";toast("Import impossible : "+(err.message||"fichier invalide"));}
 }
-const seen=new Set(state.history.map(h=>[h.name,h.date,h.detail].join("|")));
-for(const h of raw.history){if(h&&typeof h.name==="string"){const key=[h.name,h.date,h.detail].join("|");if(!seen.has(key)){state.history.push(h);seen.add(key);}}}
-state.history=state.history.slice(0,100);
-if(raw.lastId&&!state.items.some(x=>x.id===raw.lastId))state.lastId=null;
-save();render();$("backup-note").textContent="Import terminé : "+added+" ajout(s), "+updated+" mise(s) à jour.";toast("Sauvegarde importée avec succès !");
-}catch(err){$("backup-note").textContent=err.message||"Impossible d'importer ce fichier.";toast("Import impossible : vérifie le fichier JSON.");}
-}
+
 $("export-data").addEventListener("click",exportBackup);
+el.list.addEventListener("click",e=>{const b=e.target.closest("[data-expand]");if(!b)return;const key="showAll_"+b.dataset.expand;state[key]=!state[key];render();});
 $("import-data").addEventListener("change",async e=>{await importBackup(e.target.files?.[0]);e.target.value="";});
 $("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();toast("Paramètres enregistrés sur cet appareil.");}});
