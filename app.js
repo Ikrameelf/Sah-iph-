@@ -118,7 +118,7 @@ $("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();if(state.token&&state.items.some(x=>x.tmdbId))refreshRecommendations();toast("Paramètres enregistrés sur cet appareil.");}});
 $("clear-history").onclick=()=>{if(state.history.length&&confirm("Effacer l'historique ?")){state.history=[];save();render();}};
 el.sort?.addEventListener("change",render);
-render();initCloud();
+render();initCloud();window.addEventListener("online",()=>pullCloud());document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cloudSession)pullCloud();});
 if(state.token&&state.items.some(x=>x.tmdbId))refreshRecommendations();
 if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 })();
