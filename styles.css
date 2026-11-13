@@ -28,3 +28,6 @@
 
 /* Cartes de catalogue interactives */
 .library-item{cursor:pointer;transition:border-color .15s,background .15s}.library-item:focus-within,.library-item:hover{border-color:#5b3439;background:#1b171b}.library-item button{cursor:pointer;position:relative;z-index:1}.recommendations-content>.helper{margin-bottom:14px}.recommendations-content .suggestion-heading{padding-top:8px;border-top:1px solid #292930}.recommendations-content .search-results:empty{display:none}
+
+/* Bibliothèque repliable */
+.library-disclosure>summary{list-style:none;cursor:pointer}.library-disclosure>summary::-webkit-details-marker{display:none}.library-disclosure-summary .section-head{display:flex;align-items:center;justify-content:space-between;margin:0}.library-disclosure-summary .section-head:after{content:"＋";display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:1px solid #383840;border-radius:50%;color:#ddd;font-size:17px;margin-left:12px}.library-disclosure[open]>.library-disclosure-summary .section-head:after{content:"−"}.library-disclosure-content{padding-top:15px}
