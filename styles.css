@@ -20,3 +20,5 @@
 
 /* Menu repliable des recommandations */
 .recommendations-menu>summary{list-style:none;cursor:pointer}.recommendations-menu>summary::-webkit-details-marker{display:none}.recommendations-summary .section-head{display:flex;align-items:center;justify-content:space-between;margin:0}.recommendations-summary .section-head:after{content:"＋";display:grid;place-items:center;width:28px;height:28px;border:1px solid #383840;border-radius:50%;color:#ddd;font-size:16px}.recommendations-menu[open] .recommendations-summary .section-head:after{content:"−"}.recommendations-content{padding-top:15px}
+
+.search-filter{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin:12px 0 8px}.search-filter label{font-size:9px;letter-spacing:1px;font-weight:850;color:#999}.search-filter select{max-width:190px;min-width:0;height:35px;padding:0 10px;background:#222228;color:#f5f5f5;border:1px solid #414149;border-radius:6px;font-size:11px}
