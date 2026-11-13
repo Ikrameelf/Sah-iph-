@@ -114,7 +114,7 @@ save();render();note.textContent="Import réussi : "+added+" ajout(s), "+updated
 $("export-data").addEventListener("click",exportBackup);
 
 $("import-data").addEventListener("change",async e=>{await importBackup(e.target.files?.[0]);e.target.value="";});
-$("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};$("cloud-login-submit").addEventListener("click",()=>cloudLogin({preventDefault(){}}));$("cloud-logout").addEventListener("click",cloudLogout);
+$("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};$("app-refresh").onclick=()=>{window.location.reload();};$("cloud-login-submit").addEventListener("click",()=>cloudLogin({preventDefault(){}}));$("cloud-logout").addEventListener("click",cloudLogout);
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();if(state.token&&state.items.some(x=>x.tmdbId))refreshRecommendations();toast("Paramètres enregistrés sur cet appareil.");}});
 $("clear-history").onclick=()=>{if(state.history.length&&confirm("Effacer l'historique ?")){state.history=[];save();render();}};
 el.sort?.addEventListener("change",render);
