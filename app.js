@@ -106,7 +106,7 @@ save();render();note.textContent="Import réussi : "+added+" ajout(s), "+updated
 }
 
 $("export-data").addEventListener("click",exportBackup);
-el.list.addEventListener("click",e=>{const b=e.target.closest("[data-expand]");if(!b)return;const key="showAll_"+b.dataset.expand;state[key]=!state[key];render();});
+
 $("import-data").addEventListener("change",async e=>{await importBackup(e.target.files?.[0]);e.target.value="";});
 $("settings-open").onclick=()=>{el.token.value=state.token||"";el.language.value=state.language||"fr-FR";el.settings.showModal();};
 $("settings-form").addEventListener("submit",e=>{if(e.submitter?.id==="save-settings"){e.preventDefault();state.token=el.token.value.trim();state.language=el.language.value;save();el.settings.close();render();if(state.token&&state.items.some(x=>x.tmdbId))refreshRecommendations();toast("Paramètres enregistrés sur cet appareil.");}});
