@@ -39,3 +39,5 @@
 
 /* Historique cliquable et lien Serializd */
 .history-card{appearance:none;text-align:left;color:#f7f7f8;font:inherit;cursor:pointer;transition:border-color .15s,background .15s}.history-card:hover,.history-card:focus-visible{border-color:#8b3038;background:#21171a;outline:none}.history-card small{display:block;margin-top:8px;color:#e66a70;font-size:9px}.serializd-link{display:inline-flex;align-items:center;justify-content:center;margin:2px 0 8px;padding:8px 10px;border:1px solid #5a3439;border-radius:6px;background:#24171a;color:#ffc4c8;text-decoration:none;font-size:9px;font-weight:850;letter-spacing:.7px}
+
+.history-entry{position:relative;flex:0 0 154px;min-width:0}.history-entry .history-card{width:100%;height:100%;padding-right:34px}.history-delete{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:25px;height:25px;padding:0;border:1px solid #45454d;border-radius:6px;background:#24242a;color:#c9c9d0;font-size:18px;line-height:1;cursor:pointer}.history-delete:hover,.history-delete:focus-visible{border-color:var(--red);background:#40171c;color:#fff;outline:none}
