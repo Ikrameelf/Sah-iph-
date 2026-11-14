@@ -80,7 +80,7 @@ function setSynopsisEditor(kind,item,episode=null){
  const isEpisode=kind==="episode",key=currentSynopsisEpisodeKey;
  const saved=isEpisode?(item.customEpisodeSynopses?.[key]||""):(item.customMovieSynopsis||"");
  const wrap=$(isEpisode?"episode-synopsis-editor":"movie-synopsis-editor"),input=$(isEpisode?"episode-custom-synopsis":"movie-custom-synopsis");
- if(wrap)wrap.classList.remove("hidden");if(input)input.value=saved;
+ if(wrap)wrap.classList.remove("hidden");if(input)input.value=saved;const summary=wrap?.querySelector("summary");if(summary)summary.textContent=saved?"✎ Modifier mon synopsis":"＋ Ajouter un synopsis";
  const status=$(isEpisode?"episode-synopsis-status":"movie-synopsis-status");
  if(status)status.textContent=saved?"Ton synopsis personnel est enregistré.":"Tu peux écrire ton propre synopsis ici.";
 }
@@ -90,7 +90,7 @@ function saveCustomSynopsis(kind,remove=false){
  if(isEpisode){if(!currentSynopsisEpisodeKey)return;item.customEpisodeSynopses=item.customEpisodeSynopses||{};if(value)item.customEpisodeSynopses[currentSynopsisEpisodeKey]=value;else delete item.customEpisodeSynopses[currentSynopsisEpisodeKey];}
  else{if(value)item.customMovieSynopsis=value;else delete item.customMovieSynopsis;}
  item.updatedAt=Date.now();save();
- const status=$(isEpisode?"episode-synopsis-status":"movie-synopsis-status");if(status)status.textContent=value?"Ton synopsis personnel est enregistré.":"Synopsis personnel supprimé.";
+ const status=$(isEpisode?"episode-synopsis-status":"movie-synopsis-status");if(status)status.textContent=value?"Ton synopsis personnel est enregistré.":"Synopsis personnel supprimé.";const wrap=$(isEpisode?"episode-synopsis-editor":"movie-synopsis-editor"),summary=wrap?.querySelector("summary");if(summary)summary.textContent=value?"✎ Modifier mon synopsis":"＋ Ajouter un synopsis";
  if(isEpisode)$("episode-overview").textContent=value||item.lastEpisode?.overview||"Résumé d'épisode indisponible.";
  else $("card-overview").textContent=value||item.cachedMovie?.overview||"Aucun résumé disponible en français.";
  toast(remove?"Synopsis personnel supprimé.":"Synopsis personnel enregistré.");
