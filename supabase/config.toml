@@ -1,0 +1,2 @@
+[functions.generate-synopsis]
+verify_jwt = true
