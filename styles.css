@@ -53,3 +53,18 @@
 .recommendation-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 10px}.recommendation-tab{min-height:42px;border:1px solid #383840;border-radius:7px;background:#17171c;color:#aaa;font-size:10px;font-weight:900;letter-spacing:1px;cursor:pointer}.recommendation-tab.active{background:#351216;border-color:#a92b35;color:#fff}.recommendation-tab:focus-visible{outline:2px solid var(--red);outline-offset:2px}.movie-library-progress .series-progress-track span{background:#d75b63}
 
 .synopsis-editor{display:grid;gap:8px;margin:12px 0;padding:12px;background:#111115;border:1px solid #34343c;border-radius:8px}.synopsis-editor label{font-size:9px;letter-spacing:1px;color:#aaa}.synopsis-editor textarea{width:100%;min-height:76px;resize:vertical;padding:10px;background:#19191f;border:1px solid #414149;border-radius:7px;color:#f5f5f5;font:inherit;font-size:11px;line-height:1.5;outline:none}.synopsis-editor textarea:focus{border-color:var(--red)}.synopsis-editor-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.synopsis-editor-actions .secondary{min-height:36px;padding:0 12px;font-size:9px}.synopsis-editor-actions .link-btn{font-size:9px}.synopsis-editor>small{font-size:9px;color:#92929b;line-height:1.4}
+
+/* Ajustements des synopsis : texte contenu et édition discrète */
+.overview,.episode-overview{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal;white-space:normal}
+.episode-panel{grid-template-columns:105px minmax(0,1fr)}
+.episode-info{min-width:0;overflow-wrap:anywhere}
+.synopsis-option{margin:7px 0 10px;min-width:0}
+.synopsis-option>summary{display:inline-flex;align-items:center;gap:5px;cursor:pointer;list-style:none;color:#999;font-size:9px;letter-spacing:.2px;padding:5px 0;user-select:none}
+.synopsis-option>summary::-webkit-details-marker{display:none}
+.synopsis-option>summary::after{content:"";width:5px;height:5px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg);margin:0 0 3px 3px}
+.synopsis-option[open]>summary::after{transform:rotate(225deg);margin-bottom:-2px}
+.synopsis-option .synopsis-editor{margin:7px 0 0;padding:9px;gap:7px}
+.synopsis-option .synopsis-editor textarea{min-height:64px;padding:8px;font-size:10px}
+.synopsis-option .synopsis-editor-actions .secondary{min-height:31px;padding:0 10px;font-size:8px}
+.synopsis-option .synopsis-editor-actions .link-btn{font-size:8px}
+.synopsis-option .synopsis-editor>small{font-size:8px}
