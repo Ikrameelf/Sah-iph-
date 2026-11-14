@@ -81,9 +81,28 @@ async function requestAISynopsis(kind,context){
  return String(data?.synopsis||"").trim();
 }
 async function ensureAIMovieSynopsis(item,d){
- try{let source=String(d.overview||"").trim();if(!source){try{const en=await tmdb("/movie/"+item.tmdbId+"?language=en-US");source=String(en.overview||"").trim();}catch(e){}}
- const synopsis=await requestAISynopsis("movie",{title:d.title||item.name,year:dateYear(d.release_date)||item.year,genres:(d.genres||[]).map(g=>g.name),runtime:d.runtime||null,tagline:d.tagline||"",sourceOverview:source});
- if(synopsis){item.aiMovieSynopsis=synopsis;item.updatedAt=Date.now();save();return synopsis;}}catch(e){toast("Synopsis IA indisponible : "+(e.message||"vérifie la configuration."));}return "";
+ try{
+  let source=String(d.overview||"").trim(),sourceDetails=d;
+  if(!source){try{const en=await tmdb("/movie/"+item.tmdbId+"?language=en-US");if(String(en.overview||"").trim()){source=String(en.overview).trim();sourceDetails=en;}}catch(e){}}
+  // Si l'identifiant TMDB ne fournit aucun résumé, rechercher le titre exact,
+  // d'abord avec l'année de la fiche puis sans année (certains films ont une
+  // date de festival différente de leur sortie commerciale).
+  if(!source){
+   const title=String(d.title||item.name||"").trim(),year=String(dateYear(d.release_date)||item.year||"").slice(0,4);
+   const normalize=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+   for(const withYear of [true,false]){
+    try{
+     const query="/search/movie?query="+encodeURIComponent(title)+"&language=en-US&include_adult=false"+(withYear&&/^\\d{4}$/.test(year)?"&year="+year:"");
+     const results=await tmdb(query),candidates=(results.results||[]).filter(x=>normalize(x.title)===normalize(title)&&String(x.overview||"").trim());
+     const match=candidates.sort((a,b)=>Math.abs(Number(String(a.release_date||"").slice(0,4)||year)-Number(year))-Math.abs(Number(String(b.release_date||"").slice(0,4)||year)-Number(year)))[0];
+     if(match){source=String(match.overview).trim();sourceDetails={...d,...match};break;}
+    }catch(e){}
+   }
+  }
+  const synopsis=await requestAISynopsis("movie",{title:d.title||item.name,year:dateYear(d.release_date)||item.year,genres:(sourceDetails.genres||d.genres||[]).map(g=>g.name||g),runtime:sourceDetails.runtime||d.runtime||null,tagline:sourceDetails.tagline||d.tagline||"",sourceOverview:source});
+  if(synopsis){item.aiMovieSynopsis=synopsis;item.updatedAt=Date.now();save();return synopsis;}
+ }catch(e){toast("Synopsis IA indisponible : "+(e.message||"vérifie la configuration."));}
+ return "";
 }
 async function ensureAIEpisodeSynopsis(item,series,ep){
  const key=(Number(ep.season_number)||1)+":"+(Number(ep.episode_number)||1);
