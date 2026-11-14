@@ -68,3 +68,7 @@
 .synopsis-option .synopsis-editor-actions .secondary{min-height:31px;padding:0 10px;font-size:8px}
 .synopsis-option .synopsis-editor-actions .link-btn{font-size:8px}
 .synopsis-option .synopsis-editor>small{font-size:8px}
+
+
+/* Synopsis justifiés */
+.overview,.episode-overview,.recommendation-detail-overview{ text-align:justify; text-justify:inter-word; hyphens:auto; }
