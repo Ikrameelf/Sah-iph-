@@ -72,3 +72,5 @@
 
 /* Synopsis justifiés */
 .overview,.episode-overview,.recommendation-detail-overview{ text-align:justify; text-justify:inter-word; hyphens:auto; }
+
+.recommendation-title-line{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}.recommendation-title-line>span:last-child{min-width:0}.recommendation-flag{font-size:15px;line-height:1;flex:0 0 auto}
