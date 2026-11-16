@@ -102,3 +102,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 @media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto}}
 
 @media(max-width:390px){.install-app{font-size:0;min-width:34px;padding:0}.install-app:before{content:"＋";font-size:17px}}
+
+/* Navigation dédiée aux télécommandes Android TV */
+.tv-mode{scroll-behavior:auto}
+.tv-mode body{font-size:17px}
+.tv-mode .app{width:min(100% - 7vw,1600px)}
+.tv-mode .topbar{padding:18px 0 24px}
+.tv-mode .brand{font-size:18px}
+.tv-mode button,.tv-mode a,.tv-mode summary,.tv-mode select,.tv-mode input,.tv-mode textarea,.tv-mode [tabindex="0"]{scroll-margin:22px}
+.tv-mode button,.tv-mode select,.tv-mode input,.tv-mode textarea{min-height:56px;font-size:15px}
+.tv-mode .primary,.tv-mode .secondary,.tv-mode .add-btn{min-height:68px;padding:0 24px;font-size:16px}
+.tv-mode .settings-btn{width:58px;height:58px;font-size:23px}
+.tv-mode .library-item,.tv-mode .search-result,.tv-mode .history-item,.tv-mode .recommendation-item,.tv-mode .journey-series{min-height:76px;padding:14px}
+.tv-mode .library-item button,.tv-mode .recommendation-actions button{min-height:52px;padding:0 16px;font-size:13px}
+.tv-mode .library-list,.tv-mode .search-results{gap:12px}
+.tv-mode .library-tabs button,.tv-mode .recommendation-tab{min-height:58px;font-size:15px}
+.tv-mode .library-letters button,.tv-mode .nationality-filters button{min-height:48px;min-width:48px;font-size:14px}
+.tv-mode input,.tv-mode select,.tv-mode textarea{font-size:17px;padding:12px}
+.tv-mode .section-head h2,.tv-mode .result-copy h2{font-size:clamp(24px,2.4vw,36px)}
+.tv-mode :focus-visible{outline:5px solid #ff747c!important;outline-offset:5px!important;box-shadow:0 0 0 8px rgba(255,116,124,.22)!important}
+.tv-mode .library{scrollbar-width:thin}
+@media(min-width:900px){.tv-mode .app{width:min(100% - 7vw,1600px)}.tv-mode main{grid-template-columns:minmax(360px,.9fr) minmax(0,1.1fr);column-gap:36px}.tv-mode .library{max-height:calc(100vh - 30px);top:15px;padding:22px 18px}.tv-mode .hero{padding-top:20px}.tv-mode .library-list{grid-template-columns:1fr}.tv-mode .search-results{grid-template-columns:1fr}}
