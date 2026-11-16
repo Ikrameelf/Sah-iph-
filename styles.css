@@ -99,3 +99,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 @media(min-width:1100px){.app{width:min(100% - 80px,1280px)}.library-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:900px) and (pointer:coarse){button,select,.library-item,.search-result,.journey-series{min-height:48px}.settings-btn{width:48px;height:48px}.primary,.secondary,.add-btn{min-height:54px;font-size:12px}.library-item{padding:13px}.search-result{padding:12px}.journey-series{padding:12px}}
 @media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto}}
+
+@media(max-width:390px){.install-app{font-size:0;min-width:34px;padding:0}.install-app:before{content:"＋";font-size:17px}}
