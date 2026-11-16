@@ -28,11 +28,11 @@ async function loadTrailer(type,id){
  try{
   const endpoint="/"+(type==="movie"?"movie":"tv")+"/"+encodeURIComponent(id)+"/videos?language=";
   let data=await tmdb(endpoint+"fr-FR"),videos=data.results||[];
-  let candidates=videos.filter(v=>v.site==="YouTube"&&v.key&&v.type==="Trailer");
-  if(!candidates.length){data=await tmdb(endpoint+"en-US");videos=data.results||[];candidates=videos.filter(v=>v.site==="YouTube"&&v.key&&v.type==="Trailer");}
+  let candidates=videos.filter(v=>v.site==="YouTube"&&v.key&&v.type==="Trailer"&&v.iso_639_1==="fr"),language="FR";
+  if(!candidates.length){data=await tmdb(endpoint+"en-US");videos=data.results||[];candidates=videos.filter(v=>v.site==="YouTube"&&v.key&&v.type==="Trailer"&&v.iso_639_1==="en");language="EN";}
   if(request!==trailerRequestId)return;
   const chosen=candidates.find(v=>v.official)||candidates[0];
-  if(chosen){link.href="https://www.youtube.com/watch?v="+encodeURIComponent(chosen.key);link.classList.remove("hidden");link.textContent="▶ BANDE-ANNONCE"+(chosen.iso_639_1==="en"?" · EN":" · FR");}
+  if(chosen){link.href="https://www.youtube.com/watch?v="+encodeURIComponent(chosen.key);link.classList.remove("hidden");link.textContent="▶ BANDE-ANNONCE · "+language;}
  }catch(e){if(request===trailerRequestId)link.classList.add("hidden");}
 }
 function active(){return state.items.filter(x=>x.active&&!x.completed);}
