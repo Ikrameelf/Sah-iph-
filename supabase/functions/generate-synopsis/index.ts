@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
           "Retourne uniquement le synopsis, sans titre, préambule, guillemets ni commentaire."
         ].join(" "),
         input: JSON.stringify(safeContext),
-        tools: [{ type: "web_search", search_context_size: "medium" }],
+        tools: [{ type: "web_search", search_context_size: "medium", filters: { blocked_domains: ["imdb.com"] } }],
         tool_choice: "required",
         max_output_tokens: 220,
       }),
