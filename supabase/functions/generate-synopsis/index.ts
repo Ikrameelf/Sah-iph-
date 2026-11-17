@@ -9,16 +9,19 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
 Deno.serve(async (req) => {
+  console.info("[synopsis] request received", { method: req.method });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const apiKey = Deno.env.get("OPENAI_API_KEY");
+  console.info("[synopsis] OpenAI key configured:", Boolean(apiKey));
   if (!apiKey) return json({ error: "La clé OpenAI n’est pas configurée dans Supabase." }, 503);
 
   try {
     const body = await req.json();
     const kind = body?.kind;
     const context = body?.context ?? {};
+    console.info("[synopsis] payload parsed", { kind, hasContext: Boolean(body?.context) });
     if (kind !== "movie" && kind !== "episode") return json({ error: "Type de synopsis invalide." }, 400);
 
     const sourceOverview = String(context.sourceOverview ?? "").trim().slice(0, 5000);
@@ -51,6 +54,8 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     };
 
+    console.info("[synopsis] web research started", { model: "gpt-6-luna" });
+    const searchStartedAt = Date.now();
     const searchResponse = await fetch(endpoint, {
       method: "POST",
       headers,
@@ -71,6 +76,7 @@ Deno.serve(async (req) => {
       }),
     });
 
+    console.info("[synopsis] web research response", { status: searchResponse.status, durationMs: Date.now() - searchStartedAt });
     if (!searchResponse.ok) {
       const detail = await searchResponse.text();
       console.error("OpenAI web search error", searchResponse.status, detail.slice(0, 500));
@@ -78,6 +84,7 @@ Deno.serve(async (req) => {
     }
 
     const searchResult = await searchResponse.json();
+    console.info("[synopsis] web research parsed", { outputTypes: (searchResult.output ?? []).map((item: any) => item.type), outputTextLength: String(searchResult.output_text ?? "").length });
     const research = String(searchResult.output_text ?? (searchResult.output ?? [])
       .flatMap((item: any) => item.content ?? [])
       .filter((part: any) => part.type === "output_text")
@@ -98,6 +105,8 @@ Deno.serve(async (req) => {
       return json({ error: "La recherche n’a trouvé aucune information exploitable pour cette œuvre. Essaie avec un titre plus précis." }, 422);
     }
 
+    console.info("[synopsis] synopsis writing started", { researchLength: factualBasis.length });
+    const writingStartedAt = Date.now();
     const writingResponse = await fetch(endpoint, {
       method: "POST",
       headers,
@@ -116,6 +125,7 @@ Deno.serve(async (req) => {
       }),
     });
 
+    console.info("[synopsis] synopsis writing response", { status: writingResponse.status, durationMs: Date.now() - writingStartedAt });
     if (!writingResponse.ok) {
       const detail = await writingResponse.text();
       console.error("OpenAI synopsis writing error", writingResponse.status, detail.slice(0, 500));
@@ -123,6 +133,7 @@ Deno.serve(async (req) => {
     }
 
     const writingResult = await writingResponse.json();
+    console.info("[synopsis] synopsis response parsed", { outputTypes: (writingResult.output ?? []).map((item: any) => item.type), outputTextLength: String(writingResult.output_text ?? "").length });
     const synopsis = String(writingResult.output_text ?? (writingResult.output ?? [])
       .flatMap((item: any) => item.content ?? [])
       .filter((part: any) => part.type === "output_text")
@@ -136,9 +147,10 @@ Deno.serve(async (req) => {
       return json({ error: "La recherche a abouti, mais l’IA n’a pas rédigé de synopsis. Réessaie." }, 502);
     }
 
+    console.info("[synopsis] completed successfully", { synopsisLength: synopsis.length });
     return json({ synopsis: synopsis.slice(0, 900) });
   } catch (error) {
-    console.error("Synopsis function error", error);
+    console.error("[synopsis] unhandled function error", error instanceof Error ? error.message : String(error));
     return json({ error: "Impossible de générer le synopsis pour le moment." }, 500);
   }
 });
