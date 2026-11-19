@@ -130,3 +130,83 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 @media(min-width:900px){.library-item{cursor:default}.library-item.selected:after{content:"SÉLECTIONNÉE";position:absolute;right:8px;top:7px;padding:3px 6px;border-radius:4px;background:#7e2029;color:#fff;font-size:8px;font-weight:900;letter-spacing:.5px}.library-item{position:relative}.library-selection-tools{position:sticky;top:48px;z-index:3}}
 
 .library-selection-tools #close-library-selection{margin-left:auto;min-height:32px;padding:0 10px;color:#f1c8cb;font-size:9px}
+
+
+/* v61 — bibliothèque en grille de posters sur ordinateur uniquement */
+@media(min-width:900px){
+  .library{
+    grid-column:1 / -1;
+    grid-row:1;
+    position:static;
+    top:auto;
+    max-height:none;
+    overflow:visible;
+    padding:18px;
+  }
+  .library-browser{grid-template-columns:104px minmax(0,1fr);gap:16px}
+  .library-group-items{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+    align-items:stretch;
+  }
+  .library-item{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    min-width:0;
+    height:100%;
+    padding:9px;
+    cursor:pointer;
+    background:linear-gradient(160deg,#1b1b21,#121216);
+    border:1px solid #303038;
+    border-radius:10px;
+  }
+  .library-item>img{
+    display:block;
+    width:100%;
+    height:auto;
+    aspect-ratio:2 / 3;
+    object-fit:cover;
+    border-radius:6px;
+    background:#24242a;
+  }
+  .library-main{width:100%;min-width:0;padding:0}
+  .library-main strong{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    min-height:2.5em;
+    font-size:12px;
+    line-height:1.25;
+  }
+  .library-main .nationality-edit{margin:5px 0 2px!important}
+  .library-main .nationality-edit select{max-width:100%;width:100%}
+  .library-main>small{font-size:9px;line-height:1.35}
+  .library-item .series-progress{max-width:none;margin-top:7px}
+  .library-item .library-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 32px 32px;
+    gap:5px;
+    justify-content:stretch;
+    margin-top:auto;
+  }
+  .library-item .progress-btn{
+    min-width:0;
+    padding:6px 4px;
+    font-size:8px;
+    white-space:normal;
+  }
+  .library-item .icon-btn{width:32px;height:32px}
+  .library-item:hover,.library-item:focus-within{
+    border-color:#8c3b43;
+    background:#21171b;
+    transform:translateY(-2px);
+  }
+  .library-item.selected:after{right:7px;top:7px}
+}
+@media(min-width:1100px){
+  .library-group-items{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+}
