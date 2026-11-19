@@ -210,3 +210,57 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 @media(min-width:1100px){
   .library-group-items{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
 }
+
+
+/* v62 — fiche de bibliothèque centrée en superposition sur ordinateur */
+@media(min-width:900px){
+  body.library-detail-open{overflow:hidden}
+  body.library-detail-open::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:rgba(0,0,0,.78);
+    backdrop-filter:blur(5px);
+  }
+  .result-card.library-detail-modal{
+    position:fixed;
+    z-index:1001;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:min(920px,calc(100vw - 64px));
+    max-height:90vh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    margin:0;
+    padding:24px;
+    box-shadow:0 24px 90px rgba(0,0,0,.7);
+    grid-template-columns:minmax(150px,220px) minmax(0,1fr);
+    gap:24px;
+  }
+  .result-card.library-detail-modal .result-art img{
+    max-height:62vh;
+    object-fit:contain;
+    object-position:top center;
+  }
+  .library-detail-close{
+    position:absolute;
+    top:10px;
+    right:12px;
+    z-index:2;
+    width:36px;
+    height:36px;
+    border:1px solid #555;
+    border-radius:50%;
+    background:#24242b;
+    color:#fff;
+    font-size:25px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .result-card.library-detail-modal .result-copy{padding-right:28px}
+}
+@media(max-width:899px){
+  .library-detail-close{display:none}
+}
