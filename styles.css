@@ -264,3 +264,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 @media(max-width:899px){
   .library-detail-close{display:none}
 }
+
+
+/* v63 — fiche lisible et fermeture toujours accessible pendant la sélection du texte */
+@media(min-width:900px){
+  .result-card.library-detail-modal{isolation:isolate;}
+  .result-card.library-detail-modal .library-detail-close{
+    position:sticky;
+    top:0;
+    float:right;
+    margin:0 -8px -36px 0;
+    flex:0 0 36px;
+  }
+  .result-card.library-detail-modal .result-copy,
+  .result-card.library-detail-modal .overview,
+  .result-card.library-detail-modal .episode-overview{
+    user-select:text;
+    -webkit-user-select:text;
+  }
+}
