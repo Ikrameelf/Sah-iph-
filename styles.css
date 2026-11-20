@@ -262,7 +262,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
   .result-card.library-detail-modal .result-copy{padding-right:28px}
 }
 @media(max-width:899px){
-  .library-detail-close{display:none}
+  body.library-detail-open{overflow:hidden}
+  body.library-detail-open::before{content:"";position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.78)}
+  .result-card.library-detail-modal{position:fixed;z-index:1001;left:0;right:0;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);width:100%;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;margin:0;padding:18px 16px 24px;box-sizing:border-box;border-radius:0;box-shadow:0 24px 90px rgba(0,0,0,.7)}
+  .library-detail-close{display:block;position:sticky;top:0;float:right;margin:0 -4px -36px 0;width:36px;height:36px;border:1px solid #555;border-radius:50%;background:#24242b;color:#fff;font-size:25px;line-height:1;cursor:pointer;z-index:2}
+  .result-card.library-detail-modal .result-copy{padding-right:28px}
 }
 
 
