@@ -284,13 +284,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
   }
 }
 
-/* v65 — permettre explicitement la sélection et le glissement du titre de la fiche */
-@media(min-width:900px){
-  .result-card.library-detail-modal #card-title{
-    user-select:text;
-    -webkit-user-select:text;
-    -moz-user-select:text;
-    -webkit-user-drag:none;
-    cursor:text;
-  }
-}
+
