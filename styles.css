@@ -289,3 +289,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 }
 
 
+
+/* Correctif iPhone : empêcher l'effondrement de la colonne texte dans la fiche */
+@media(max-width:899px){.result-card.library-detail-modal{display:grid!important;grid-template-columns:minmax(96px,28vw) minmax(0,1fr)!important;column-gap:14px!important;align-items:start!important}.result-card.library-detail-modal .result-art,.result-card.library-detail-modal .result-copy{min-width:0!important;width:auto!important;max-width:100%!important}.result-card.library-detail-modal .result-copy{padding-right:0!important;overflow-wrap:break-word;word-break:normal}.result-card.library-detail-modal .result-copy h2,.result-card.library-detail-modal .overview{max-width:100%;overflow-wrap:anywhere}.result-card.library-detail-modal .result-art img{width:100%;height:auto;display:block;aspect-ratio:2/3;object-fit:cover}.result-card.library-detail-modal .episode-panel,.result-card.library-detail-modal .film-panel{grid-column:1/-1!important;min-width:0!important}}
