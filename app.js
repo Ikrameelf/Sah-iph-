@@ -116,7 +116,7 @@ async function ensureAIMovieSynopsis(item,d){
   // date de festival différente de leur sortie commerciale).
   if(!source){
    const title=String(d.title||item.name||"").trim(),year=String(dateYear(d.release_date)||item.year||"").slice(0,4);
-   const normalize=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+   const normalize=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
    for(const withYear of [true,false]){
     try{
      const query="/search/movie?query="+encodeURIComponent(title)+"&language=en-US&include_adult=false"+(withYear&&/^\\d{4}$/.test(year)?"&year="+year:"");
@@ -162,7 +162,7 @@ async function showMovie(item){$("series-synopsis-editor").classList.add("hidden
  const synopsis=await ensureAIMovieSynopsis(item,d);
  if(synopsis){$("card-overview").textContent=synopsis;}
  else{
-  const normalizeTitle=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const normalizeTitle=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   if(normalizeTitle(d.title||item.name)==="99 songs"){
    const verified="Jay, un jeune auteur-compositeur passionné, doit créer cent chansons pour convaincre le père de la femme qu’il aime qu’il est digne de l’épouser. Ce défi artistique l’entraîne dans une quête personnelle où la musique devient le fil conducteur de ses aspirations, de ses choix et de ses émotions.";
    item.aiMovieSynopsis=verified;item.updatedAt=Date.now();save();$("card-overview").textContent=verified;
@@ -202,7 +202,7 @@ $("progress-form").addEventListener("submit",e=>{if(e.submitter?.id!=="save-prog
 
 function parseLetterboxdCSV(text){
  const rows=[];let row=[],cell="",quoted=false;
- for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch=='"'&&text[i+1]=='"'){cell+='"';i++;}else if(ch=='"')quoted=false;else cell+=ch;}else{if(ch=='"')quoted=true;else if(ch==','){row.push(cell);cell="";}else if(ch==='\\n'){row.push(cell);rows.push(row);row=[];cell="";}else if(ch!=='\\r')cell+=ch;}}
+ for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch=='"'&&text[i+1]=='"'){cell+='"';i++;}else if(ch=='"')quoted=false;else cell+=ch;}else{if(ch=='"')quoted=true;else if(ch==','){row.push(cell);cell="";}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell="";}else if(ch!=='\r')cell+=ch;}}
  row.push(cell);if(row.some(v=>v.trim()))rows.push(row);if(!rows.length)return [];
  const headers=rows.shift().map(v=>v.trim().toLowerCase());const titleIndex=headers.indexOf("name");const yearIndex=headers.indexOf("year");if(titleIndex<0)throw Error("CSV Letterboxd invalide : colonne Name manquante.");
  return rows.map(r=>({name:(r[titleIndex]||"").trim(),year:yearIndex>=0?(r[yearIndex]||"").trim():""})).filter(x=>x.name);
@@ -212,7 +212,7 @@ $("letterboxd-file").addEventListener("change",async e=>{
  if(!state.token){toast("Ajoute d'abord ton jeton TMDB dans les paramètres.");el.settings.showModal();e.target.value="";return;}
  try{
  let records=[];for(const f of files){if(f.size>10*1024*1024)throw Error("Un CSV dépasse 10 Mo.");records=records.concat(parseLetterboxdCSV(await f.text()));}
- const norm=v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g," ").trim();
+ const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("fr").replace(/[^a-z0-9]+/g," ").trim();
  const unique=new Map();records.forEach(r=>unique.set(norm(r.name)+"|"+r.year,r));
  let added=0,skipped=0,updated=0;
  for(const r of unique.values()){
